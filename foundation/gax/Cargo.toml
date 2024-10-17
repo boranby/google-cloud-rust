@@ -18,3 +18,5 @@ tower = { version = "0.4", features = ["filter"] }
 http = "1.1"
 google-cloud-token = { version = "0.1.2", path = "../token" }
 tokio-retry2 = "0.5.3"
+hyper-proxy2 = "0.1.0"
+hyper-util = "0.1.9"

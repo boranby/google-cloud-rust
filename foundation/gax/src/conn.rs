@@ -7,6 +7,8 @@ use std::time::Duration;
 
 use http::header::AUTHORIZATION;
 use http::{HeaderValue, Request};
+use hyper_proxy2::{Intercept, Proxy, ProxyConnector};
+use hyper_util::client::legacy::connect::HttpConnector;
 use tonic::body::BoxBody;
 use tonic::transport::{Channel as TonicChannel, ClientTlsConfig, Endpoint};
 use tonic::{Code, Status};
@@ -30,7 +32,7 @@ impl AsyncAuthInterceptor {
 }
 
 impl AsyncPredicate<Request<BoxBody>> for AsyncAuthInterceptor {
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Request, BoxError>> + Send>>;
+    type Future = Pin<Box<dyn Future<Output=Result<Self::Request, BoxError>> + Send>>;
     type Request = Request<BoxBody>;
 
     fn check(&mut self, request: Request<BoxBody>) -> Self::Future {
@@ -178,8 +180,21 @@ impl<'a> ConnectionManager {
     }
 
     async fn connect(endpoint: Endpoint) -> Result<TonicChannel, tonic::transport::Error> {
-        let channel = endpoint.connect().await?;
-        Ok(channel)
+        // get the https_proxy env var
+        if let Ok(proxy) = std::env::var("HTTPS_PROXY") {
+            let proxy = {
+                let proxy_uri = proxy.parse().unwrap();
+                let proxy = Proxy::new(Intercept::All, proxy_uri);
+                let connector = HttpConnector::new();
+                let proxy_connector = ProxyConnector::from_proxy(connector, proxy).unwrap();
+                proxy_connector
+            };
+            let channel = endpoint.connect_with_connector(proxy).await?;
+            Ok(channel)
+        } else {
+            let channel = endpoint.connect().await?;
+            Ok(channel)
+        }
     }
 
     pub fn num(&self) -> usize {
