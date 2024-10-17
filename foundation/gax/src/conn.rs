@@ -195,6 +195,7 @@ impl<'a> ConnectionManager {
             tracing::debug!("connected with proxy");
             Ok(channel)
         } else {
+            tracing::debug!("connecting without proxy");
             let channel = endpoint.connect().await?;
             Ok(channel)
         }
