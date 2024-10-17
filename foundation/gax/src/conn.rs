@@ -180,7 +180,6 @@ impl<'a> ConnectionManager {
     }
 
     async fn connect(endpoint: Endpoint) -> Result<TonicChannel, tonic::transport::Error> {
-        tracing::debug!("connecting to endpoint");
         // get the https_proxy env var
         if let Ok(proxy) = std::env::var("HTTPS_PROXY") {
             tracing::debug!("using proxy: {}", proxy);
