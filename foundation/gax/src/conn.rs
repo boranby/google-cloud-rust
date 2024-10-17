@@ -182,6 +182,7 @@ impl<'a> ConnectionManager {
     async fn connect(endpoint: Endpoint) -> Result<TonicChannel, tonic::transport::Error> {
         // get the https_proxy env var
         if let Ok(proxy) = std::env::var("HTTPS_PROXY") {
+            tracing::debug!("using proxy: {}", proxy);
             let proxy = {
                 let proxy_uri = proxy.parse().unwrap();
                 let proxy = Proxy::new(Intercept::All, proxy_uri);
@@ -189,7 +190,9 @@ impl<'a> ConnectionManager {
                 let proxy_connector = ProxyConnector::from_proxy(connector, proxy).unwrap();
                 proxy_connector
             };
+            tracing::debug!("connecting with proxy");
             let channel = endpoint.connect_with_connector(proxy).await?;
+            tracing::debug!("connected with proxy");
             Ok(channel)
         } else {
             let channel = endpoint.connect().await?;
